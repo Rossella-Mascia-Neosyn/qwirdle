@@ -1,6 +1,6 @@
 {
-  "name": "my-qwik-basic-starter",
-  "description": "App with Routing built-in (recommended)",
+  "name": "qwirdle",
+  "description": "Qwirdle is a clone of Wordle",
   "engines": {
     "node": ">=15.0.0"
   },
