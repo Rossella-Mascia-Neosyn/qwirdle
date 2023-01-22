@@ -95,8 +95,7 @@ export default component$(() => {
 	);
 
 	return (
-		<form method='POST' action='?/enter'>
-			{JSON.stringify(store)}
+		<form method='POST' action='/'>
 			<div
 				class={`grid ${!store.won ? 'playing' : ''} ${
 					store.badGuess ? 'bad-guess' : ''
