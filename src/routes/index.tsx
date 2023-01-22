@@ -1,29 +1,87 @@
-import { $, component$, useStore, useStyles$ } from '@builder.io/qwik';
+import {
+	$,
+	component$,
+	useOnWindow,
+	useStore,
+	useStyles$,
+} from '@builder.io/qwik';
 import { DocumentHead } from '@builder.io/qwik-city';
+import { allowed, words } from '~/data/words.server';
 import cssStyle from './index.css?inline';
+
+type Store = {
+	guesses: string[];
+	answers: string[];
+	answer: string;
+	i: number;
+	won: boolean;
+	badGuess: boolean;
+};
 
 export default component$(() => {
 	useStyles$(cssStyle);
-	const store = useStore({
-		guesses: ['abbey', '', '', '', '', ''],
-		answers: ['c____'],
-		answer: null,
-		i: 1,
-		classnames: {} as Record<string, string>,
+	const store = useStore<Store>({
+		guesses: ['', '', '', '', '', ''],
+		answers: [],
+		answer: words[Math.floor(Math.random() * words.length)],
+		i: 0,
 		won: false,
+		badGuess: false,
 	});
-	const form = { badGuess: false };
 
-	const onKeyPress = $((key: string) => {
-		if (!!key) {
+	const check = $(() => {
+		const word = store.guesses[store.i];
+		const valid = allowed.has(word);
+		console.log('1');
+		if (!valid) return true;
+
+		console.log('2');
+
+		const available = Array.from(store.answer);
+		const answer = Array(5).fill('_');
+
+		// first, find exact matches
+		for (let i = 0; i < 5; i += 1) {
+			if (word[i] === available[i]) {
+				answer[i] = 'x';
+				available[i] = ' ';
+			}
+		}
+
+		// then find close matches (this has to happen
+		// in a second step, otherwise an early close
+		// match can prevent a later exact match)
+		for (let i = 0; i < 5; i += 1) {
+			if (answer[i] === '_') {
+				const index = available.indexOf(word[i]);
+				if (index !== -1) {
+					answer[i] = 'c';
+					available[index] = ' ';
+				}
+			}
+		}
+
+		store.answers = [...store.answers, answer.join('')];
+		if (answer.join('') === 'xxxxx') {
+			store.won = true;
+		} else {
+			store.i += 1;
+		}
+		return false;
+	});
+
+	const onKeyPress = $(async (key: string) => {
+		if (!store.won && store.i < 6 && key) {
 			const guesses = store.guesses;
-			let guess = guesses[store.i];
-
-			if (key === 'enter') {
-				console.log('enter');
-			} else if (key === 'backspace') {
+			const guess = guesses[store.i];
+			console.log('0', key);
+			if (key === 'Enter') {
+				console.log('0');
+				store.badGuess = await check();
+				setTimeout(() => (store.badGuess = false), 1000);
+			} else if (key === 'Backspace') {
 				guesses[store.i] = guess.slice(0, -1);
-				if (form?.badGuess) form.badGuess = false;
+				if (store.badGuess) store.badGuess = false;
 			} else if (guess.length < 5) {
 				guesses[store.i] += key;
 			}
@@ -31,12 +89,22 @@ export default component$(() => {
 		}
 	});
 
+	useOnWindow(
+		'keydown',
+		$((event: Event) => {
+			if (event instanceof KeyboardEvent) {
+				if (event.metaKey) return;
+				onKeyPress(event.key);
+			}
+		})
+	);
+
 	return (
 		<form method='POST' action='?/enter'>
 			{JSON.stringify(store)}
 			<div
 				class={`grid ${!store.won ? 'playing' : ''} ${
-					form?.badGuess ? 'bad-guess' : ''
+					store.badGuess ? 'bad-guess' : ''
 				}`}
 			>
 				{[...Array(6).keys()].map((row) => {
@@ -134,7 +202,13 @@ export default component$(() => {
 													onKeyPress(letter);
 												})}
 												data-key={letter}
-												class={store.classnames[letter]}
+												class={`${
+													store.answer[store.i] === 'x'
+														? 'exact'
+														: store.answer[store.i] === 'c'
+														? 'close'
+														: 'missing'
+												}`}
 												disabled={store.guesses[store.i].length === 5}
 												name='key'
 												value={letter}
