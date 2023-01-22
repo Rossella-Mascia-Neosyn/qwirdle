@@ -1,5 +1,7 @@
 header {
 	display: flex;
+	align-items: center;
+	justify-content: center;
 	background: white;
 	border-bottom: 10px solid var(--qwik-dark-purple);
 	margin-bottom: 30px;
@@ -7,29 +9,10 @@ header {
 
 header .logo a {
 	display: inline-block;
-	padding: 10px 10px 7px 20px;
+	padding: 15px 10px 7px 10px;
 }
 
-header ul {
-	margin: 0;
-	padding: 3px 10px 0 0;
-	list-style: none;
-	flex: 1;
-	text-align: right;
-}
-
-header li {
-	display: inline-block;
-	margin: 0;
-	padding: 0;
-}
-
-header li a {
-	display: inline-block;
-	padding: 15px 10px;
-	text-decoration: none;
-}
-
-header li a:hover {
-	text-decoration: underline;
+header .title {
+	font-size: 25px;
+	align-content: center;
 }

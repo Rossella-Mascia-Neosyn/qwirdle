@@ -7,12 +7,12 @@ export default component$(() => {
 
 	return (
 		<header>
+			<span class='title'>Qwirdle is a clone of Wordle with</span>
 			<div class='logo'>
 				<a href='https://qwik.builder.io/' target='_blank' title='qwik'>
 					<QwikLogo />
 				</a>
 			</div>
-			<ul></ul>
 		</header>
 	);
 });
