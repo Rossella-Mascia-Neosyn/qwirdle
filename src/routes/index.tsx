@@ -95,7 +95,7 @@ export default component$(() => {
 	);
 
 	return (
-		<form method='POST' action='/'>
+		<form method='GET' action=''>
 			<div
 				class={`grid ${!store.won ? 'playing' : ''} ${
 					store.badGuess ? 'bad-guess' : ''
