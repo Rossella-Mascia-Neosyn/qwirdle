@@ -1,4 +1,4 @@
-import { component$, useStore, useStyles$ } from '@builder.io/qwik';
+import { $, component$, useStore, useStyles$ } from '@builder.io/qwik';
 import { DocumentHead } from '@builder.io/qwik-city';
 import cssStyle from './index.css?inline';
 
@@ -10,21 +10,39 @@ export default component$(() => {
 		answer: null,
 		i: 1,
 		classnames: {} as Record<string, string>,
+		won: false,
 	});
-	const won = false;
 	const form = { badGuess: false };
+
+	const onKeyPress = $((key: string) => {
+		if (!!key) {
+			const guesses = store.guesses;
+			let guess = guesses[store.i];
+
+			if (key === 'enter') {
+				console.log('enter');
+			} else if (key === 'backspace') {
+				guesses[store.i] = guess.slice(0, -1);
+				if (form?.badGuess) form.badGuess = false;
+			} else if (guess.length < 5) {
+				guesses[store.i] += key;
+			}
+			store.guesses = [...guesses];
+		}
+	});
+
 	return (
 		<form method='POST' action='?/enter'>
 			{JSON.stringify(store)}
 			<div
-				class={`grid ${!won ? 'playing' : ''} ${
+				class={`grid ${!store.won ? 'playing' : ''} ${
 					form?.badGuess ? 'bad-guess' : ''
 				}`}
 			>
 				{[...Array(6).keys()].map((row) => {
 					return (
 						<>
-							<h2 class='visually-hidden s-QKuN4MdM35ff'>{row + 1}</h2>
+							<h2 class='visually-hidden'>{row + 1}</h2>
 							<div class={`row ${row === store.i ? 'current' : ''}`}>
 								{[...Array(5).keys()].map((column) => {
 									return (
@@ -68,55 +86,68 @@ export default component$(() => {
 				})}
 			</div>
 			<div class='controls'>
-				{/* {won || store.answers.length >= 6
-			{#if !won && data.answer}
-				<p>the answer was "{data.answer}"</p>
-			{/if}
-			<button data-key="enter" class="restart selected" formaction="?/restart">
-				{won ? 'you won :)' : `game over :(`} play again?
-			</button>
-		{:else} */}
-				<div class='keyboard'>
-					<button
-						data-key='enter'
-						class={`${store.guesses[store.i]?.length === 5 ? 'selected' : ''}`}
-						disabled={store.guesses[store.i]?.length !== 5}
-					>
-						enter
-					</button>
+				{store.won || store.answers.length >= 6 ? (
+					<>
+						{!store.won && store.answer && (
+							<p>the answer was "{store.answer}"</p>
+						)}
+						<button data-key='enter' class='restart selected'>
+							{store.won ? 'you won :)' : `game over :(`} play again?
+						</button>
+					</>
+				) : (
+					<div class='keyboard'>
+						<button
+							preventdefault:click
+							onClick$={$(() => {
+								onKeyPress('enter');
+							})}
+							data-key='enter'
+							class={`${
+								store.guesses[store.i]?.length === 5 ? 'selected' : ''
+							}`}
+							disabled={store.guesses[store.i]?.length !== 5}
+						>
+							enter
+						</button>
 
-					<button
-						// on:click|preventDefault={update}
-						data-key='backspace'
-						// formaction="?/update"
-						name='key'
-						value='backspace'
-					>
-						back
-					</button>
+						<button
+							preventdefault:click
+							onClick$={$(() => {
+								onKeyPress('backspace');
+							})}
+							data-key='backspace'
+							name='key'
+							value='backspace'
+						>
+							back
+						</button>
 
-					{['qwertyuiop', 'asdfghjkl', 'zxcvbnm'].map((row) => {
-						return (
-							<div class='row'>
-								{[...row].map((letter) => {
-									return (
-										<button
-											// on:click|preventDefault={update}
-											data-key={letter}
-											class={store.classnames[letter]}
-											disabled={store.guesses[store.i].length === 5}
-											// formaction="?/update"
-											name='key'
-											value={letter}
-										>
-											{letter}
-										</button>
-									);
-								})}
-							</div>
-						);
-					})}
-				</div>
+						{['qwertyuiop', 'asdfghjkl', 'zxcvbnm'].map((row) => {
+							return (
+								<div class='row'>
+									{[...row].map((letter) => {
+										return (
+											<button
+												preventdefault:click
+												onClick$={$(() => {
+													onKeyPress(letter);
+												})}
+												data-key={letter}
+												class={store.classnames[letter]}
+												disabled={store.guesses[store.i].length === 5}
+												name='key'
+												value={letter}
+											>
+												{letter}
+											</button>
+										);
+									})}
+								</div>
+							);
+						})}
+					</div>
+				)}
 			</div>
 		</form>
 	);
