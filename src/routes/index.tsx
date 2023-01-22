@@ -1,155 +1,133 @@
-import { component$ } from '@builder.io/qwik';
-import type { DocumentHead } from '@builder.io/qwik-city';
-import { Link } from '@builder.io/qwik-city';
+import { component$, useStore, useStyles$ } from '@builder.io/qwik';
+import { DocumentHead } from '@builder.io/qwik-city';
+import cssStyle from './index.css?inline';
 
 export default component$(() => {
-  return (
-    <div>
-      <h1>
-        Welcome to Qwik <span class="lightning">⚡️</span>
-      </h1>
+	useStyles$(cssStyle);
+	const store = useStore({
+		guesses: ['abbey', '', '', '', '', ''],
+		answers: ['c____'],
+		answer: null,
+		i: 1,
+		classnames: {} as Record<string, string>,
+	});
+	const won = false;
+	const form = { badGuess: false };
+	return (
+		<form method='POST' action='?/enter'>
+			{JSON.stringify(store)}
+			<div
+				class={`grid ${!won ? 'playing' : ''} ${
+					form?.badGuess ? 'bad-guess' : ''
+				}`}
+			>
+				{[...Array(6).keys()].map((row) => {
+					return (
+						<>
+							<h2 class='visually-hidden s-QKuN4MdM35ff'>{row + 1}</h2>
+							<div class={`row ${row === store.i ? 'current' : ''}`}>
+								{[...Array(5).keys()].map((column) => {
+									return (
+										<div
+											class={`letter ${
+												store.answers[row]?.[column] === 'x' ? 'exact ' : ''
+											} ${
+												store.answers[row]?.[column] === 'c' ? 'close ' : ''
+											} ${
+												store.answers[row]?.[column] === '_' ? 'missing ' : ''
+											} ${
+												row === store.i && column === store.guesses[row].length
+													? 'selected'
+													: ''
+											}`}
+										>
+											{store.guesses[row]?.[column] ?? ''}
+											<span class='visually-hidden'>
+												{store.answers[row]?.[column] === 'x' ? (
+													<>(correct)</>
+												) : store.answers[row]?.[column] === 'c' ? (
+													<>(present)</>
+												) : store.answers[row]?.[column] === '_' ? (
+													<>(absent)</>
+												) : (
+													<>empty</>
+												)}
+											</span>
+											<input
+												name='guess'
+												disabled={row !== store.i}
+												type='hidden'
+												value={store.guesses[row]?.[column] ?? ''}
+											/>
+										</div>
+									);
+								})}
+							</div>
+						</>
+					);
+				})}
+			</div>
+			<div class='controls'>
+				{/* {won || store.answers.length >= 6
+			{#if !won && data.answer}
+				<p>the answer was "{data.answer}"</p>
+			{/if}
+			<button data-key="enter" class="restart selected" formaction="?/restart">
+				{won ? 'you won :)' : `game over :(`} play again?
+			</button>
+		{:else} */}
+				<div class='keyboard'>
+					<button
+						data-key='enter'
+						class={`${store.guesses[store.i]?.length === 5 ? 'selected' : ''}`}
+						disabled={store.guesses[store.i]?.length !== 5}
+					>
+						enter
+					</button>
 
-      <ul>
-        <li>
-          Check out the <code>src/routes</code> directory to get started.
-        </li>
-        <li>
-          Add integrations with <code>npm run qwik add</code>.
-        </li>
-        <li>
-          More info about development in <code>README.md</code>
-        </li>
-      </ul>
+					<button
+						// on:click|preventDefault={update}
+						data-key='backspace'
+						// formaction="?/update"
+						name='key'
+						value='backspace'
+					>
+						back
+					</button>
 
-      <h2>Commands</h2>
-
-      <table class="commands">
-        <tr>
-          <td>
-            <code>npm run dev</code>
-          </td>
-          <td>Start the dev server and watch for changes.</td>
-        </tr>
-        <tr>
-          <td>
-            <code>npm run preview</code>
-          </td>
-          <td>Production build and start preview server.</td>
-        </tr>
-        <tr>
-          <td>
-            <code>npm run build</code>
-          </td>
-          <td>Production build.</td>
-        </tr>
-        <tr>
-          <td>
-            <code>npm run qwik add</code>
-          </td>
-          <td>Select an integration to add.</td>
-        </tr>
-      </table>
-
-      <h2>Add Integrations</h2>
-
-      <table class="commands">
-        <tr>
-          <td>
-            <code>npm run qwik add azure-swa</code>
-          </td>
-          <td>
-            <a href="https://learn.microsoft.com/azure/static-web-apps/overview" target="_blank">
-              Azure Static Web Apps
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <code>npm run qwik add cloudflare-pages</code>
-          </td>
-          <td>
-            <a href="https://developers.cloudflare.com/pages" target="_blank">
-              Cloudflare Pages Server
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <code>npm run qwik add express</code>
-          </td>
-          <td>
-            <a href="https://expressjs.com/" target="_blank">
-              Nodejs Express Server
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <code>npm run qwik add netlify-edge</code>
-          </td>
-          <td>
-            <a href="https://docs.netlify.com/" target="_blank">
-              Netlify Edge Functions
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <code>npm run qwik add static</code>
-          </td>
-          <td>
-            <a
-              href="https://qwik.builder.io/qwikcity/static-site-generation/overview/"
-              target="_blank"
-            >
-              Static Site Generation (SSG)
-            </a>
-          </td>
-        </tr>
-      </table>
-
-      <h2>Community</h2>
-
-      <ul>
-        <li>
-          <span>Questions or just want to say hi? </span>
-          <a href="https://qwik.builder.io/chat" target="_blank">
-            Chat on discord!
-          </a>
-        </li>
-        <li>
-          <span>Follow </span>
-          <a href="https://twitter.com/QwikDev" target="_blank">
-            @QwikDev
-          </a>
-          <span> on Twitter</span>
-        </li>
-        <li>
-          <span>Open issues and contribute on </span>
-          <a href="https://github.com/BuilderIO/qwik" target="_blank">
-            GitHub
-          </a>
-        </li>
-        <li>
-          <span>Watch </span>
-          <a href="https://qwik.builder.io/media/" target="_blank">
-            Presentations, Podcasts, Videos, etc.
-          </a>
-        </li>
-      </ul>
-      <Link class="mindblow" href="/flower/">
-        Blow my mind 🤯
-      </Link>
-    </div>
-  );
+					{['qwertyuiop', 'asdfghjkl', 'zxcvbnm'].map((row) => {
+						return (
+							<div class='row'>
+								{[...row].map((letter) => {
+									return (
+										<button
+											// on:click|preventDefault={update}
+											data-key={letter}
+											class={store.classnames[letter]}
+											disabled={store.guesses[store.i].length === 5}
+											// formaction="?/update"
+											name='key'
+											value={letter}
+										>
+											{letter}
+										</button>
+									);
+								})}
+							</div>
+						);
+					})}
+				</div>
+			</div>
+		</form>
+	);
 });
 
 export const head: DocumentHead = {
-  title: 'Welcome to Qwik',
-  meta: [
-    {
-      name: 'description',
-      content: 'Qwik site description',
-    },
-  ],
+	title: 'Qwirdle',
+	meta: [
+		{
+			name: 'description',
+			content: 'Qwirdle is a clone of Wordle with Qwik',
+		},
+	],
 };
