@@ -32,10 +32,7 @@ export default component$(() => {
 	const check = $(() => {
 		const word = store.guesses[store.i];
 		const valid = allowed.has(word);
-		console.log('1');
 		if (!valid) return true;
-
-		console.log('2');
 
 		const available = Array.from(store.answer);
 		const answer = Array(5).fill('_');
@@ -74,9 +71,7 @@ export default component$(() => {
 		if (!store.won && store.i < 6 && key) {
 			const guesses = store.guesses;
 			const guess = guesses[store.i];
-			console.log('0', key);
 			if (key === 'Enter') {
-				console.log('0');
 				store.badGuess = await check();
 				setTimeout(() => (store.badGuess = false), 1000);
 			} else if (key === 'Backspace') {
