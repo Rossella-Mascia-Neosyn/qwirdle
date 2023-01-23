@@ -4,8 +4,11 @@ import {
 	useOnWindow,
 	useStore,
 	useStyles$,
+	useTask$,
 } from '@builder.io/qwik';
 import { DocumentHead } from '@builder.io/qwik-city';
+import { Keyboard } from '~/components/keyboard/Keyboard';
+import { Results } from '~/components/results/Results';
 import { allowed, words } from '~/data/words.server';
 import cssStyle from './index.css?inline';
 
@@ -16,6 +19,7 @@ type Store = {
 	i: number;
 	won: boolean;
 	badGuess: boolean;
+	classnames: Record<string, string>;
 };
 
 export default component$(() => {
@@ -27,6 +31,26 @@ export default component$(() => {
 		i: 0,
 		won: false,
 		badGuess: false,
+		classnames: {},
+	});
+
+	useTask$(({ track }) => {
+		track(() => store.answers);
+		store.classnames = {};
+
+		store.answers.forEach((answer, i) => {
+			const guess = store.guesses[i];
+
+			for (let i = 0; i < 5; i += 1) {
+				const letter = guess[i];
+
+				if (answer[i] === 'x') {
+					store.classnames[letter] = 'exact';
+				} else if (!store.classnames[letter]) {
+					store.classnames[letter] = answer[i] === 'c' ? 'close' : 'missing';
+				}
+			}
+		});
 	});
 
 	const check = $(() => {
@@ -94,6 +118,15 @@ export default component$(() => {
 		})
 	);
 
+	const getAnswerClass = (answer: string) =>
+		answer === 'x'
+			? 'exact'
+			: answer === 'c'
+			? 'close'
+			: answer === '_'
+			? 'missing'
+			: '';
+
 	return (
 		<form method='GET' action=''>
 			<div
@@ -102,119 +135,42 @@ export default component$(() => {
 				}`}
 			>
 				{[...Array(6).keys()].map((row) => {
+					const current = row === store.i;
 					return (
-						<>
-							<h2 class='visually-hidden'>{row + 1}</h2>
-							<div class={`row ${row === store.i ? 'current' : ''}`}>
-								{[...Array(5).keys()].map((column) => {
-									return (
-										<div
-											class={`letter ${
-												store.answers[row]?.[column] === 'x' ? 'exact ' : ''
-											} ${
-												store.answers[row]?.[column] === 'c' ? 'close ' : ''
-											} ${
-												store.answers[row]?.[column] === '_' ? 'missing ' : ''
-											} ${
-												row === store.i && column === store.guesses[row].length
-													? 'selected'
-													: ''
-											}`}
-										>
-											{store.guesses[row]?.[column] ?? ''}
-											<span class='visually-hidden'>
-												{store.answers[row]?.[column] === 'x' ? (
-													<>(correct)</>
-												) : store.answers[row]?.[column] === 'c' ? (
-													<>(present)</>
-												) : store.answers[row]?.[column] === '_' ? (
-													<>(absent)</>
-												) : (
-													<>empty</>
-												)}
-											</span>
-											<input
-												name='guess'
-												disabled={row !== store.i}
-												type='hidden'
-												value={store.guesses[row]?.[column] ?? ''}
-											/>
-										</div>
-									);
-								})}
-							</div>
-						</>
+						<div class={`row ${row === store.i ? 'current' : ''}`}>
+							{[...Array(5).keys()].map((col) => {
+								const answer = store.answers[row]?.[col];
+								const value = store.guesses[row]?.[col] ?? '';
+								const selected = current && col === store.guesses[row].length;
+								return (
+									<div
+										class={`letter ${getAnswerClass(answer)} ${
+											selected ? 'selected' : ''
+										}`}
+									>
+										{value}
+										<input
+											name='guess'
+											disabled={!current}
+											type='hidden'
+											value={value}
+										/>
+									</div>
+								);
+							})}
+						</div>
 					);
 				})}
 			</div>
 			<div class='controls'>
 				{store.won || store.answers.length >= 6 ? (
-					<>
-						{!store.won && store.answer && (
-							<p>the answer was "{store.answer}"</p>
-						)}
-						<button data-key='enter' class='restart selected'>
-							{store.won ? 'you won :)' : `game over :(`} play again?
-						</button>
-					</>
+					<Results won={store.won} answer={store.answer} />
 				) : (
-					<div class='keyboard'>
-						<button
-							preventdefault:click
-							onClick$={$(() => {
-								onKeyPress('enter');
-							})}
-							data-key='enter'
-							class={`${
-								store.guesses[store.i]?.length === 5 ? 'selected' : ''
-							}`}
-							disabled={store.guesses[store.i]?.length !== 5}
-						>
-							enter
-						</button>
-
-						<button
-							preventdefault:click
-							onClick$={$(() => {
-								onKeyPress('backspace');
-							})}
-							data-key='backspace'
-							name='key'
-							value='backspace'
-						>
-							back
-						</button>
-
-						{['qwertyuiop', 'asdfghjkl', 'zxcvbnm'].map((row) => {
-							return (
-								<div class='row'>
-									{[...row].map((letter) => {
-										return (
-											<button
-												preventdefault:click
-												onClick$={$(() => {
-													onKeyPress(letter);
-												})}
-												data-key={letter}
-												class={`${
-													store.answer[store.i] === 'x'
-														? 'exact'
-														: store.answer[store.i] === 'c'
-														? 'close'
-														: 'missing'
-												}`}
-												disabled={store.guesses[store.i].length === 5}
-												name='key'
-												value={letter}
-											>
-												{letter}
-											</button>
-										);
-									})}
-								</div>
-							);
-						})}
-					</div>
+					<Keyboard
+						onKeyPress={onKeyPress}
+						classnames={store.classnames}
+						submittable={store.guesses[store.i]?.length === 5}
+					/>
 				)}
 			</div>
 		</form>
