@@ -1,4 +1,4 @@
-# Qwik City App ⚡️. 
+# Qwik City App ⚡️ new2
 
 - [Qwik Docs](https://qwik.builder.io/)
 - [Discord](https://qwik.builder.io/chat)
